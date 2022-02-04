@@ -131,8 +131,7 @@ class Blockchain {
 
             const time = parseInt(message.split(':')[1]);
             const currentTime = new Date().getTime().toString().slice(0,-3);
-            const allowedDelay = 5 * 60;
-            if (currentTime - time > allowedDelay) reject(new Error('Must sign within 5 minutes'));
+            if (currentTime - time > 60 *5) reject(new Error('Must sign within 5 minutes'));
             const valid = bitcoinMessage.verify(message, address, signature);
             if (!valid) reject(new Error('Verification failed'));
 
@@ -215,8 +214,8 @@ class Blockchain {
         let errorLog = [];
         return new Promise(async (resolve, reject) => {
 
-            for (let i = 0; i < this.chain.length; i++) {//TODO(lukas) change this
-                const curBlock = this.chain[i];
+            for (let index = 0; index < this.chain.length; index++) {//TODO(lukas) change this
+                const curBlock = this.chain[index];
                 if ( await curBlock.validate()==false ) {
                     errorLog.push({
                         errorType: 'FailedValidation',
@@ -224,7 +223,7 @@ class Blockchain {
                     });
                 }
                 
-                if(i!=0 && self.previousBlockHash!=self.chain[i-1].hash){
+                if(index!=0 && self.previousBlockHash!=self.chain[index-1].hash){
                     errorLog.push({
                         errorType: 'Previous bloch hash mismatch',
                         block: curBlock
