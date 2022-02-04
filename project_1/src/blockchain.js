@@ -35,7 +35,7 @@ class Blockchain {
      */
     async initializeChain() {
         if( this.height === -1){
-            let block = new BlockClass.Block({data: 'Genesis Block'});
+            let block = new BlockClass.Block(null);
             await this._addBlock(block);
         }
     }
@@ -63,8 +63,31 @@ class Blockchain {
      */
     _addBlock(block) {
         let self = this;
+        let h = self.getChainHeight();
+        let t = new Date().getTime().toString().slice(0,-3);
+        
+
+
         return new Promise(async (resolve, reject) => {
-           
+
+            try {
+
+                if (h>0){
+                    let lastBlock = await self.getBlockByHeight(h-1);
+                    self.previousBlockHash = lastBlock.hash;
+                }
+
+                self.height = h+1;
+                self.chain.push(block);
+                block.time=t;
+                block.hash=SHA256(JSON.stringify(block)).toString();
+                resolve(block);//TODO(lukas) Not sure what to resolve here
+
+            }
+            catch (err){
+                reject(err);
+            }
+
         });
     }
 
@@ -78,6 +101,9 @@ class Blockchain {
      */
     requestMessageOwnershipVerification(address) {
         return new Promise((resolve) => {
+
+            //resolve(`${address}:${this._getUTCTimestamp()}:starRegistry`);
+            resolve(`${address}:${new Date().getTime().toString().slice(0,-3)}:starRegistry`)
             
         });
     }
@@ -102,7 +128,21 @@ class Blockchain {
     submitStar(address, message, signature, star) {
         let self = this;
         return new Promise(async (resolve, reject) => {
-            
+
+            const time = parseInt(message.split(':')[1]);
+            const currentTime = new Date().getTime().toString().slice(0,-3);
+            const allowedDelay = 5 * 60;
+            if (currentTime - time > allowedDelay) reject(new Error('Must sign within 5 minutes'));
+            const valid = bitcoinMessage.verify(message, address, signature);
+            if (!valid) reject(new Error('Verification failed'));
+
+            try {
+                const block = new BlockClass.Block({star: star, owner: address });
+                const res = await this._addBlock(block);
+                resolve(block);
+            } catch (err) {
+                reject(err);
+            }
         });
     }
 
@@ -115,6 +155,13 @@ class Blockchain {
     getBlockByHash(hash) {
         let self = this;
         return new Promise((resolve, reject) => {
+
+            for (const block of self.chain) {
+                if(block.hash==hash){
+                    resolve(block)
+                }
+            }
+            reject({})
            
         });
     }
@@ -146,7 +193,14 @@ class Blockchain {
         let self = this;
         let stars = [];
         return new Promise((resolve, reject) => {
-            
+
+            for (const block of self.chain) {
+                const blockdata = block.getBData();
+                if(blockdata && blockdata.owner==address){
+                    stars.push(blockdata)
+                }
+            }
+            resolve(stars)
         });
     }
 
@@ -160,6 +214,27 @@ class Blockchain {
         let self = this;
         let errorLog = [];
         return new Promise(async (resolve, reject) => {
+
+            for (let i = 0; i < this.chain.length; i++) {//TODO(lukas) change this
+                const curBlock = this.chain[i];
+                if ( await curBlock.validate()==false ) {
+                    errorLog.push({
+                        errorType: 'FailedValidation',
+                        block: curBlock
+                    });
+                }
+                
+                if(i!=0 && self.previousBlockHash!=self.chain[i-1].hash){
+                    errorLog.push({
+                        errorType: 'Previous bloch hash mismatch',
+                        block: curBlock
+                    });
+                }
+
+            }
+            resolve(errorLog)
+
+
             
         });
     }
