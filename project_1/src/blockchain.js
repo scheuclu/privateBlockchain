@@ -75,12 +75,18 @@ class Blockchain {
                 if (h>0){
                     let lastBlock = await self.getBlockByHeight(h-1);
                     self.previousBlockHash = lastBlock.hash;
+                    let errs = await this.validateChain();
+                    if (errs.length()>0){
+                        throw new Error("Chain invalid");
+                    }
                 }
 
                 self.height = h+1;
                 self.chain.push(block);
                 block.time=t;
-                block.hash=SHA256(JSON.stringify(block)).toString();
+                block.hash=SHA256(JSON.stringify(
+                    [block.height, block.body, block.time, block.previousBlockHash]
+                    )).toString();
                 resolve(block);//TODO(lukas) Not sure what to resolve here
 
             }

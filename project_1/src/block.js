@@ -46,7 +46,7 @@ class Block {
 
             // Returning the Block is valid
             let curhash = self.hash;
-            SHA256(JSON.stringify(self)).toString(); 
+            let checkhash = SHA256(JSON.stringify([ self.height, self.body, self.time, self.previousBlockHash ] )).toString(); 
 
             if (curhash==checkhash){
               resolve(true);
