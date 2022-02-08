@@ -1,0 +1,157 @@
+<html>
+
+<head>
+  <title>Web3 Metamask Login</title>
+  <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+</head>
+
+<body class="flex w-screen h-screen justify-center items-center">
+  <div class="flex-col space-y-2 justify-center items-center">
+    <button id='loginButton' onclick="" class="mx-auto rounded-md p-2 bg-purple-500 text-white">
+      Login with MetaMask
+    </button>
+    <p id='userWallet' class='text-lg text-gray-600 my-2'></p>
+  </div>
+
+
+  <div>
+    <hr>
+    <label for="message">     This site writes a secret message to the Ethereum
+        blockchain!</label>
+    <input id="userInput" type="text">
+    <button id="setMessageButton">Set secret message</button>
+  </div>
+    
+
+
+  <script>
+    window.userWalletAddress = null
+    const loginButton = document.getElementById('loginButton')
+    const userWallet = document.getElementById('userWallet')
+    const sendMessageButton = document.getElementById('setMessageButton')
+    const userInputField=document.getElementById('userInput')
+
+    function toggleButton() {
+      if (!window.ethereum) {
+        loginButton.innerText = 'MetaMask is not installed'
+        loginButton.classList.remove('bg-purple-500', 'text-white')
+        loginButton.classList.add('bg-gray-500', 'text-gray-100', 'cursor-not-allowed')
+        return false
+      }
+
+      loginButton.addEventListener('click', loginWithMetaMask)
+    }
+
+    function sendMessage() {
+      if (!window.ethereum) {
+        loginButton.innerText = 'MetaMask is not installed'
+        loginButton.classList.remove('bg-purple-500', 'text-white')
+        loginButton.classList.add('bg-gray-500', 'text-gray-100', 'cursor-not-allowed')
+        return false
+      }
+
+      sendMessageButton.addEventListener('click', sendData)
+    }
+
+    async function loginWithMetaMask() {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+        .catch((e) => {
+          console.error(e.message)
+          return
+        })
+      if (!accounts) { return }
+
+      window.userWalletAddress = accounts[0]
+      userWallet.innerText = window.userWalletAddress
+      loginButton.innerText = 'Sign out of MetaMask'
+
+      loginButton.removeEventListener('click', loginWithMetaMask)
+      setTimeout(() => {
+        loginButton.addEventListener('click', signOutOfMetaMask)
+      }, 200)
+    }
+
+    async function sendData() {
+      console.log("Works");
+
+      web3 = new Web3(web3.currentProvider);
+      
+      let abi = [
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "x",
+				"type": "string"
+			}
+		],
+		"name": "setMessage",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "getMessage",
+		"outputs": [
+			{
+				"name": "",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+        let address = '0x0E43e9D1C0EbdC0CF1aA6B48eF24D9Ba280534ad';
+        var RemixContract = new web3.eth.Contract(abi, address);
+        var myMessage = RemixContract;
+
+        console.log(myMessage.methods);
+
+        myMessage.methods.setMessage(userInputField.value).send({
+                from: "0x341d6a2E9128EbE742d240E28DD53A0eA72Ee000"});
+        console.log("Sent data");
+        console.log(userInputField.value);
+
+
+      return
+      // const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+      //   .catch((e) => {
+      //     console.error(e.message)
+      //     return
+      //   })
+      // if (!accounts) { return }
+
+      // window.userWalletAddress = accounts[0]
+      // userWallet.innerText = window.userWalletAddress
+      // loginButton.innerText = 'Sign out of MetaMask'
+
+      // loginButton.removeEventListener('click', loginWithMetaMask)
+      // setTimeout(() => {
+      //   loginButton.addEventListener('click', signOutOfMetaMask)
+      // }, 200)
+    }
+
+    function signOutOfMetaMask() {
+      window.userWalletAddress = null
+      userWallet.innerText = ''
+      loginButton.innerText = 'Sign in with MetaMask'
+
+      loginButton.removeEventListener('click', signOutOfMetaMask)
+      setTimeout(() => {
+        loginButton.addEventListener('click', loginWithMetaMask)
+      }, 200)
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      toggleButton(), sendMessage()
+    });
+  </script>
+</body>
+
+</html>
